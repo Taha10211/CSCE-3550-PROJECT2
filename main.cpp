@@ -48,13 +48,12 @@ bool key_exists(int kid) {
     }
 
 void generate_and_store_key(int kid) {
-// Replace with actual key generation and serialization to store in the database
-    std::string private_key = "GeneratedPrivateKey"; // Replace with actual key generation
+    std::string private_key = "GeneratedPrivateKey";
     const char* insert_sql = "INSERT INTO keys (key, exp) VALUES (?, ?);";
     sqlite3_stmt* stmt;
     int rc = sqlite3_prepare_v2(db, insert_sql, -1, &stmt, 0);
     rc = sqlite3_bind_blob(stmt, 1, private_key.c_str(), private_key.size(), SQLITE_STATIC);
-    rc = sqlite3_bind_int(stmt, 2, 3600); // Expiration time in seconds
+    rc = sqlite3_bind_int(stmt, 2, 3600);
     rc = sqlite3_step(stmt);
     sqlite3_finalize(stmt);
 }
@@ -75,9 +74,6 @@ bool retrieve_key(int kid, std::string& private_key) {
 }
 
 std::string construct_jwks_from_database() {
-// Replace with actual retrieval and construction logic from the database
-// Construct the JWKS response based on data retrieved from the database
-// Sample JWKS response below
 std::string jwks = R"({
             "keys": [
                 {
@@ -108,7 +104,7 @@ int main() {
 
     svr.Post("/auth", [&](const httplib::Request& req, httplib::Response& res) {
         if (req.method != "POST") {
-            res.status = 405; // Method Not Allowed
+            res.status = 405; 
             res.set_content("Method Not Allowed", "text/plain");
         return;
     }
@@ -118,7 +114,7 @@ int main() {
     std::string private_key;
     int kid = expired ? 1 : 2;
     if (!retrieve_key(kid, private_key)) {
-        res.status = 500; // Internal Server Error
+        res.status = 500; 
         res.set_content("Error retrieving private key", "text/plain");
         return;
     }
@@ -129,13 +125,12 @@ int main() {
         .set_payload_claim("sample", jwt::claim(std::string("test")))
         .set_issued_at(std::chrono::system_clock::now())
         .set_expires_at(expired ? now - std::chrono::seconds{ 1 } : now + std::chrono::hours{ 24 })
-        .sign(jwt::algorithm::rs256(nullptr, private_key)); // Pass nullptr as the public key
-
+        .sign(jwt::algorithm::rs256(nullptr, private_key));
     res.set_content(token, "text/plain");
     });
 
     svr.Get("/.well-known/jwks.json", [&](const httplib::Request&, httplib::Response& res) {
-        std::string jwks = construct_jwks_from_database(); // Retrieve JWKS from the database
+        std::string jwks = construct_jwks_from_database();
         res.set_content(jwks, "application/json");
     });
 
